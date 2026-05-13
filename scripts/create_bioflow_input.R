@@ -6,11 +6,40 @@ ensure_cran_packages <- function(packages, repos = "https://cloud.r-project.org"
   )]
 
   if (length(missing) > 0) {
-    install.packages(missing, repos = repos)
+    tryCatch(
+      install.packages(missing, repos = repos),
+      error = function(e) {
+        stop(
+          sprintf("Failed to install required CRAN packages: %s", paste(missing, collapse = ", ")),
+          call. = FALSE
+        )
+      }
+    )
+  }
+
+  still_missing <- packages[!vapply(
+    packages,
+    function(pkg) requireNamespace(pkg, quietly = TRUE),
+    FUN.VALUE = logical(1)
+  )]
+
+  if (length(still_missing) > 0) {
+    stop(
+      sprintf("Required CRAN packages are still unavailable: %s", paste(still_missing, collapse = ", ")),
+      call. = FALSE
+    )
   }
 }
 
 read_table_auto <- function(path) {
+  if (!file.exists(path)) {
+    stop(sprintf("Input file does not exist: %s", path), call. = FALSE)
+  }
+
+  if (isTRUE(file.info(path)$size == 0)) {
+    stop(sprintf("Input file is empty: %s", path), call. = FALSE)
+  }
+
   first_line <- readLines(path, n = 1, warn = FALSE)
   sep <- if (grepl("\\t", first_line)) "\t" else ","
 
@@ -31,10 +60,29 @@ create_bioflow_input <- function(phenotype_file,
                                  output_file = NULL) {
   ensure_cran_packages(c("vcfR"))
 
-  phenotype <- read_table_auto(phenotype_file)
-  pedigree <- read_table_auto(pedigree_file)
-  vcf <- vcfR::read.vcfR(genotype_vcf_file, verbose = FALSE)
-  genotype <- vcfR::extract.gt(vcf, element = "GT", as.numeric = FALSE)
+  with_file_context <- function(label, path, reader) {
+    tryCatch(
+      reader(path),
+      error = function(e) {
+        stop(sprintf("Failed to read %s file '%s': %s", label, path, conditionMessage(e)), call. = FALSE)
+      }
+    )
+  }
+
+  phenotype <- with_file_context("phenotype", phenotype_file, read_table_auto)
+  pedigree <- with_file_context("pedigree", pedigree_file, read_table_auto)
+  vcf <- with_file_context("genotype VCF", genotype_vcf_file, function(path) {
+    vcfR::read.vcfR(path, verbose = FALSE)
+  })
+  genotype <- tryCatch(
+    vcfR::extract.gt(vcf, element = "GT", as.numeric = FALSE),
+    error = function(e) {
+      stop(
+        sprintf("Failed to extract genotype matrix from VCF '%s': %s", genotype_vcf_file, conditionMessage(e)),
+        call. = FALSE
+      )
+    }
+  )
 
   bioflow_input <- list(
     phenotype = phenotype,
@@ -78,5 +126,11 @@ run_from_cli <- function(args = commandArgs(trailingOnly = TRUE)) {
 }
 
 if (identical(environment(), globalenv()) && !interactive()) {
-  run_from_cli()
+  tryCatch(
+    run_from_cli(),
+    error = function(e) {
+      message(conditionMessage(e))
+      quit(status = 1)
+    }
+  )
 }
