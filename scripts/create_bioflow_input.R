@@ -1,5 +1,9 @@
 ensure_cran_packages <- function(packages, repos = "https://cloud.r-project.org") {
-  missing <- packages[!vapply(packages, requireNamespace, quietly = TRUE, FUN.VALUE = logical(1))]
+  missing <- packages[!vapply(
+    packages,
+    function(pkg) requireNamespace(pkg, quietly = TRUE),
+    FUN.VALUE = logical(1)
+  )]
 
   if (length(missing) > 0) {
     install.packages(missing, repos = repos)
@@ -54,7 +58,7 @@ create_bioflow_input <- function(phenotype_file,
 }
 
 run_from_cli <- function(args = commandArgs(trailingOnly = TRUE)) {
-  if (length(args) < 4) {
+  if (length(args) != 4) {
     stop(
       paste(
         "Usage: Rscript scripts/create_bioflow_input.R",
