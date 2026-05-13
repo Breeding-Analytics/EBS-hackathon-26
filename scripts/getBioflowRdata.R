@@ -214,7 +214,7 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
   # --- status
   status <- data.frame(
     module = c("qaRaw","qaGeno"),
-    analysisId = rep(analysisId,2),
+    analysisId = c(analysisId,analysisId),
     analysisIdName = c("qa_ebs_pdm","qa_ebs_mda")
   )
   
