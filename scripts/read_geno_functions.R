@@ -440,6 +440,14 @@ get_overall_summary <- function(gl){
   return(out)
 }
 
+# Function to infer ploidy from a single genotype call
+get_ploidy_from_gt <- function(gt_string) {
+  if (is.na(gt_string)) return(NA)
+  # Count separators (/ or |) and add 1
+  separators <- nchar(gt_string) - nchar(gsub("[/|]", "", gt_string))
+  return(separators + 1)
+}
+
 #' read_vcf
 #'
 #' This function reads a VCF file (compressed or uncompressed) and converts it into a genlight object.
@@ -458,17 +466,19 @@ get_overall_summary <- function(gl){
 #' dat.dose.vcf = read_vcf(tempfl, ploidity = 2)
 #' print(dat.dose.vcf)
 #' plot(dat.dose.vcf)
-read_vcf <- function(path, ploidity = 2, na_reps = c("-", "./."), sep="/") {
+read_vcf <- function(path, na_reps = c("-", "./."), sep="/") {
   
   if (!file.exists(path)){
     cli::cli_abort("`path` don't exist. Verify if is writed properly {path}")
   }
-  if (!rlang::is_integerish(ploidity)) {
-    cli::cli_abort("`ploidity` must be a round number not {ploidity}")
-  }
   # Read the VCF file
   vcf <- vcfR::read.vcfR(path)
   
+  gt_matrix <- vcfR::extract.gt(vcf, return.alleles = TRUE)
+  ploidy_matrix <- apply(gt_matrix, c(1, 2), get_ploidy_from_gt)
+  # Get the most common ploidy level
+  ploidity <- as.numeric(names(sort(table(ploidy_matrix), decreasing = TRUE))[1])
+
   # Get the metadata from the VCF file
   meta_vcf <- as.data.frame(vcfR::getFIX(vcf))
   
@@ -650,6 +660,43 @@ apply_sequence_filtering <- function(gl, filt_sequence){
   }
   
   return(list(gl = working_gl, filt_log = filtering_log))
+}
+
+get_filter_log <- function(filter_step_log, geno_data){
+  print("filter_processing...")
+  base_loc_names <- adegenet::locNames(geno_data)
+  base_ind_names <- adegenet::indNames(geno_data)
+  out <- purrr::map_df(filter_step_log, function(filter_step){
+    
+    if(length(filter_step$filter_out) > 0){
+      
+      reason <- paste(filter_step$filter_margin,
+                      filter_step$param,
+                      filter_step$operator,
+                      filter_step$threshold,
+                      sep = '_')
+      
+      if(filter_step$filter_margin == 'loc'){
+        loc_idx <- which(filter_step$filter_out %in% base_loc_names)
+        col_data <- loc_idx
+        row_data <- rep(NA, length(loc_idx))
+        
+      } else {
+        ind_idx <- which(filter_step$filter_out %in% base_ind_names)
+        col_data <- rep(NA, length(ind_idx))
+        row_data <- ind_idx
+      }
+      
+      filt_step_log <- data.frame(
+        reason = rep(reason, length(filter_step$filter_out)),
+        row = row_data,
+        col = col_data,
+        value = rep(NA, length(filter_step$filter_out))
+      )
+      return(filt_step_log)
+    }
+  })
+  return(out)
 }
 
 #' Imputation with allele frequency

@@ -23,7 +23,7 @@ phenotype_file <- "test/pheno.csv"
 pedigree_file <- "test/PedF1.csv"
 genotype_vcf_file <- "test/inputF1.vcf"
 output_file <- "bioflow_input_test"
-output_path <- "test/"
+output_path <- "test"
 
 # Verify test data files exist
 cat("Checking for test data files...\n")
