@@ -49,55 +49,11 @@
 #' @param requestId string indicating the analysis request id generated in EBS 
 # -------------------------------------------------------------------------------------
 
-source_relative <- function(filename) {
-  # Get the scripts directory from options if set, otherwise try to determine it
-  scripts_dir <- getOption("scripts_dir")
-  
-  if (is.null(scripts_dir)) {
-    # Try to determine scripts directory from call stack
-    for (i in 1:sys.nframe()) {
-      frame <- sys.frame(i)
-      srcfile <- attr(frame, "srcfile")
-      if (!is.null(srcfile)) {
-        file_path <- normalizePath(srcfile$filename)
-        # If this file is in scripts directory, use that
-        if (grepl("/scripts/", file_path) || grepl("\\\\scripts\\\\", file_path)) {
-          scripts_dir <- dirname(file_path)
-          break
-        }
-        # Otherwise check if parent directory has a scripts subdirectory
-        parent_dir <- dirname(file_path)
-        if (dir.exists(file.path(parent_dir, "scripts"))) {
-          scripts_dir <- file.path(parent_dir, "scripts")
-          break
-        }
-      }
-    }
-  }
-  
-  if (is.null(scripts_dir)) {
-    stop("Could not determine scripts directory. Please set options(scripts_dir = '...')", call. = FALSE)
-  }
-  
-  full_path <- file.path(scripts_dir, filename)
-  if (!file.exists(full_path)) {
-    stop(sprintf("File not found: %s (looked in: %s)", filename, scripts_dir), call. = FALSE)
-  }
-  source(full_path, local = FALSE)
-}
-
 getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = NULL, 
                      traits, outputPath, outputFile, requestId = NULL) {
   
-  # Source other required scripts using location-independent paths
-  source_relative("packages_verification.R")
-  
   # Now we can use ensure_cran_packages since packages_verification.R has been sourced
   ensure_cran_packages(c("vcfR", "adegenet", "cli", "rlang"))
-  
-  # Source read_geno_functions.R
-  source_relative("read_geno_functions.R")
-  
   analysisId <- round(as.numeric(Sys.time()), 0)
   cat(paste0("analysisId: ", analysisId, "\n"))
   

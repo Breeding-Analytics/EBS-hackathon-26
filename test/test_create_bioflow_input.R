@@ -1,23 +1,6 @@
 # Test script for create_bioflow_input function
 # This script tests the getBioflowRData function with sample data files
 
-# Determine script directory and project root
-# When run from Rscript, we can get the calling command from commandArgs()
-args <- commandArgs(trailingOnly = FALSE)
-script_arg <- grep("--file=", args, value = TRUE)
-
-if (length(script_arg) > 0) {
-  script_path <- sub("--file=", "", script_arg)
-  script_dir <- dirname(normalizePath(script_path))
-  project_root <- dirname(script_dir)
-} else {
-  # Fallback: assume current directory is project root
-  project_root <- getwd()
-}
-
-# Set working directory to project root for consistent relative paths
-setwd(project_root)
-
 # Define paths to test data files (relative to project root)
 phenotype_file <- "test/pheno.csv"
 pedigree_file <- "test/PedF1.csv"
@@ -38,11 +21,13 @@ if (!file.exists(genotype_vcf_file)) {
 }
 cat("✓ All test data files found\n")
 
-# Set the scripts directory as an option so sourced scripts know where they are
-options(scripts_dir = normalizePath("scripts"))
+# Source and run the function to collect all the codebase into a 
+# single script
+source("scripts/bundle_scripts.R")
+bundle_bioflow_scripts()
 
 # Source only the function definitions from the main script
-source("scripts/getBioflowRdata.R")
+source("scripts/bundled_getBioflowRdata.R")
 
 # Run the function
 cat("\nExecuting create_bioflow_input function...\n")
