@@ -3,20 +3,42 @@ Here we will store the code produced in the EBS-hackathon-26
 
 ## Bioflow input conversion script
 
-Use `scripts/create_bioflow_input.R` to convert phenotype, pedigree, and genotype (VCF) files into a Bioflow-compatible R object.
+Use `scripts/bundled_getBioflowRdata.R` to convert phenotype, pedigree, and genotype (VCF) files into a Bioflow-compatible R object.
 
 ### What it does
-- Checks for required CRAN packages and installs missing ones (currently `vcfR`)
-- Reads phenotype and pedigree tabular files (CSV or TSV)
-- Reads genotype data from VCF
-- Creates a `bioflow_input` R object and writes it as an `.rds` file
+- Checks for required CRAN packages and installs missing ones (currently `vcfR`, `adegenet`, `cli`, `rlang`)
+- Reads phenotype and pedigree tabular files (CSV)
+- Reads genotype data from VCF it can be compressed (.gz) or plain text
+- Creates a `bioflow_input` R object and writes it as an `.robj` file
 
 ### Usage
 
-```bash
-Rscript scripts/create_bioflow_input.R \
-  /path/to/phenotype.csv \
-  /path/to/pedigree.csv \
-  /path/to/genotypes.vcf \
-  /path/to/output/bioflow_input.rds
+
+For use you can use the script located in `scripts/bundled_getBioflowRdata.R`
+
+```R
+library("https://github.com/Breeding-Analytics/EBS-hackathon-26/blob/main/scripts/bundled_getBioflowRdata.R")
+
+# Paths for phenotype, pedigree and genotype data
+phenotype_file <- "test/pheno.csv"
+pedigree_file <- "test/PedF1.csv"
+genotype_vcf_file <- "test/inputF1.vcf"
+
+# Paths of output .RData
+output_file <- "bioflow_input_test" # Filename of the output file
+output_path <- "test"
+
+# List target traits to analyze present on phenotype dataset
+traits <- c("Pollen_DAP_days","Silk_DAP_days","Plant_Height_cm","Ear_Height_cm",
+            "Root_Lodging_plants","Stalk_Lodging_plants",
+            "Yield_Mg_ha","Grain_Moisture","Twt_kg_m3")
+
+result <- getBioflowRData(
+  phenotypeFile = phenotype_file,
+  pedigreeFile  = NULL,
+  genotypeFile = genotype_vcf_file,
+  traits = traits,
+  outputPath = output_file,
+  outputFile = output_path
+)
 ```

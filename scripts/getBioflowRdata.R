@@ -213,5 +213,4 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
     dir.create(outputPath)
   }
   save(result, file = paste0(outputPath, "/", outputFile, ".RData"))
-  return(result)
 } # end of staRData fxn
