@@ -2,9 +2,9 @@
 # This script tests the getBioflowRData function with sample data files
 
 # Define paths to test data files (relative to project root)
-phenotype_file <- "test/pheno.csv"
+phenotype_file <- "test/bioflow_pheno_data.csv"
 pedigree_file <- "test/PedF1.csv"
-genotype_vcf_file <- "test/inputF1.vcf"
+genotype_vcf_file <- "test/bioflow_genotype_data.vcf"
 output_file <- "bioflow_input_test"
 output_path <- "test"
 
@@ -28,12 +28,11 @@ bundle_bioflow_scripts()
 
 # Source only the function definitions from the main script
 source("scripts/bundled_getBioflowRdata.R")
+#source("https://raw.githubusercontent.com/Breeding-Analytics/EBS-hackathon-26/refs/heads/main/scripts/bundled_getBioflowRdata.R")
 
 # Run the function
 cat("\nExecuting create_bioflow_input function...\n")
-traits <- c("Pollen_DAP_days","Silk_DAP_days","Plant_Height_cm","Ear_Height_cm",
-            "Root_Lodging_plants","Stalk_Lodging_plants",
-            "Yield_Mg_ha","Grain_Moisture","Twt_kg_m3")
+traits <- c("Maize Plant Height","Wheat Plant Height","Leaf Blight Severity (1-9)")
 
 result <- getBioflowRData(
   phenotypeFile = phenotype_file,

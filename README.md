@@ -17,7 +17,7 @@ Use `scripts/bundled_getBioflowRdata.R` to convert phenotype, pedigree, and geno
 For use you can use the script located in `scripts/bundled_getBioflowRdata.R`
 
 ```R
-library("https://github.com/Breeding-Analytics/EBS-hackathon-26/blob/main/scripts/bundled_getBioflowRdata.R")
+library("https://raw.githubusercontent.com/Breeding-Analytics/EBS-hackathon-26/refs/heads/main/scripts/bundled_getBioflowRdata.R")
 
 # Paths for phenotype, pedigree and genotype data
 phenotype_file <- "test/pheno.csv"
@@ -41,4 +41,34 @@ result <- getBioflowRData(
   outputPath = output_file,
   outputFile = output_path
 )
+```
+
+## Column mapping and bundling
+
+Create a JSON file with old-to-new phenotype column names:
+
+```json
+{
+  "Year": "year",
+  "Field_Location": "site",
+  "Replicate": "rep"
+}
+```
+
+Generate/update the hardcoded named list used by the scripts:
+
+```bash
+Rscript -e "source('scripts/pheno_column_mapping_utils.R'); write_hardcoded_column_mapping('scripts/pheno_mapping.json')"
+```
+
+Bundle all modular scripts into one file:
+
+```bash
+Rscript scripts/bundle_scripts.R
+```
+
+Regenerate mapping from JSON and bundle in one command:
+
+```bash
+Rscript scripts/bundle_scripts.R scripts bundled_getBioflowRdata.R scripts/pheno_mapping.json
 ```

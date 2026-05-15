@@ -62,28 +62,39 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
   cat("\n")
   
   # --- data -> pheno
-  # data_pheno <- read.csv(phenotypeFile, encoding = 'utf-8')
+  data_pheno <- read.csv(phenotypeFile, encoding = 'utf-8')
+
+  if (exists("apply_column_mapping_to_pheno", mode = "function") && exists("PHENO_COLUMN_MAPPING", inherits = TRUE)) {
+    apply_mapping_fn <- get("apply_column_mapping_to_pheno", mode = "function")
+    pheno_column_mapping <- get("PHENO_COLUMN_MAPPING", inherits = TRUE)
+
+    data_pheno <- apply_mapping_fn(
+      data_pheno = data_pheno,
+      column_mapping = pheno_column_mapping,
+      strict = FALSE
+    )
+  }
   
   # # remove non-alphanumeric character in occurrenceName and revise how enviroment is created
-  # data_pheno$environment <- paste0("Env", paste(data_pheno$year, data_pheno$season, gsub("[^a-zA-Z0-9]", "", data_pheno$occurrenceName), sep = "_"))
+  data_pheno$environment <- paste0("Env", paste(data_pheno$year, data_pheno$season, gsub("[^a-zA-Z0-9]", "", data_pheno$occurrenceName), sep = "_"))
   
-  # # check if variable are present
-  # if (any(is.na(data_pheno$design)) || any(data_pheno$design == "")) {
-  #   stop("Design information are missing for some or all rows.")
-  # }
+  # check if variable are present
+  if (any(is.na(data_pheno$design)) || any(data_pheno$design == "")) {
+    stop("Design information are missing for some or all rows.")
+  }
   
-  # # check design parameter base, rep in EBS pertains to the number of times that entry appear in the occurrence 
-  # data_pheno[data_pheno$design == "Partially Replicated", "rep"] <- NA
-  # data_pheno[data_pheno$design == "Augmented", "rep"] <- NA
-  # data_pheno[data_pheno$design == "Augmented RCBD", "rep"] <- NA # assumes that blockNumber is not NA
+  # check design parameter base, rep in EBS pertains to the number of times that entry appear in the occurrence 
+  data_pheno[data_pheno$design == "Partially Replicated", "rep"] <- NA
+  data_pheno[data_pheno$design == "Augmented", "rep"] <- NA
+  data_pheno[data_pheno$design == "Augmented RCBD", "rep"] <- NA # assumes that blockNumber is not NA
   
-  # # --- data -> pedigree
-  # data_pedigree <- data.frame(
-  #   germplasmName = as.vector(unique(data_pheno$germplasmName)),
-  #   mother = NA,
-  #   father = NA,
-  #   yearOfOrigin = NA
-  # )
+  # --- data -> pedigree
+  data_pedigree <- data.frame(
+    germplasmName = as.vector(unique(data_pheno$germplasmName)),
+    mother = NA,
+    father = NA,
+    yearOfOrigin = NA
+  )
   
   # --- data -> geno
   data_geno <- read_vcf(genotypeFile) # todo generalize the ploidity level
@@ -94,57 +105,57 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
   #   value = as.vector(c("breedingStage", "year", "season", "site", "experiment", "occurrenceName", "rep", "blockNumber", "paY", "paX", "germplasmName", "germplasmDbId", "entryType", traits, "environment", "ebs-ba"))
   # )
   
-  # metadata_pheno1 <- data.frame(
-  #   parameter = c("stage", "year", "season", "location", "trial", "study", "rep", "iBlock", "row", "col", "designation", "gid", "entryType"),
-  #   value = c("breedingStage", "year", "season", "site", "experiment", "occurrenceName", "rep", "blockNumber", "paY", "paX", "germplasmName", "germplasmDbId", "entryType")
-  # )
-  # metadata_pheno2 <- data.frame(
-  #   parameter = "trait",
-  #   value = traits
-  # )
-  # if (is.null(requestId)) {
-  #   metadata_pheno3 <- data.frame(
-  #     parameter = c("environment", "source", "sourceId"),
-  #     value = c("environment", "ebs-ba", NA)
-  #   )
-  # } else {
-  #   metadata_pheno3 <- data.frame(
-  #     parameter = c("environment", "source", "sourceId"),
-  #     value = c("environment", "ebs-ba", requestId)
-  #   )  
-  # }
+  metadata_pheno1 <- data.frame(
+    parameter = c("stage", "year", "season", "location", "trial", "study", "rep", "iBlock", "row", "col", "designation", "gid", "entryType"),
+    value = c("breedingStage", "year", "season", "site", "experiment", "occurrenceName", "rep", "blockNumber", "paY", "paX", "germplasmName", "germplasmDbId", "entryType")
+  )
+  metadata_pheno2 <- data.frame(
+    parameter = "trait",
+    value = traits
+  )
+  if (is.null(requestId)) {
+    metadata_pheno3 <- data.frame(
+      parameter = c("environment", "source", "sourceId"),
+      value = c("environment", "ebs-ba", NA)
+    )
+  } else {
+    metadata_pheno3 <- data.frame(
+      parameter = c("environment", "source", "sourceId"),
+      value = c("environment", "ebs-ba", requestId)
+    )  
+  }
   
-  # metadata_pheno <- rbind(rbind(metadata_pheno1, metadata_pheno2), metadata_pheno3)
+  metadata_pheno <- rbind(rbind(metadata_pheno1, metadata_pheno2), metadata_pheno3)
   
-  # metadata_pheno_parameter_size <- length(metadata_pheno$parameter)
-  # metadata_pheno_value_size <- length(metadata_pheno$value)
-  # if (metadata_pheno_parameter_size != metadata_pheno_value_size) {
-  #   stop(paste0("metadata length mismatch: ",
-  #               "parameter=", metadata_pheno_parameter_size,
-  #               " vs. value=", metadata_pheno_value_size))
-  # }
+  metadata_pheno_parameter_size <- length(metadata_pheno$parameter)
+  metadata_pheno_value_size <- length(metadata_pheno$value)
+  if (metadata_pheno_parameter_size != metadata_pheno_value_size) {
+    stop(paste0("metadata length mismatch: ",
+                "parameter=", metadata_pheno_parameter_size,
+                " vs. value=", metadata_pheno_value_size))
+  }
   
-  # # --- metadata -> pedigree
-  # metadata_pedigree <- data.frame(
-  #   parameter = as.vector(c("designation", "mother", "father", "yearOfOrigin")),
-  #   value = as.vector(c("germplasmName", "mother", "father", "yearOfOrigin"))
-  # )
+  # --- metadata -> pedigree
+  metadata_pedigree <- data.frame(
+    parameter = as.vector(c("designation", "mother", "father", "yearOfOrigin")),
+    value = as.vector(c("germplasmName", "mother", "father", "yearOfOrigin"))
+  )
   
   # --- metadata -> geno
   metadata_geno <- data.frame(
     parameter = as.vector(c("input_format", "ploidity")),
     value = as.vector(c("vcf", 2))
   )
-  # # --- modifications -> pheno
-  # modifications_pheno <- data.frame(
-  #   module = "qaRaw",
-  #   analysisId = analysisId,
-  #   trait = traits,
-  #   reason = "none",
-  #   row = NA,
-  #   value = NA
-  # )
-  # row.names(modifications_pheno) <- traits
+  # --- modifications -> pheno
+  modifications_pheno <- data.frame(
+    module = "qaRaw",
+    analysisId = analysisId,
+    trait = traits,
+    reason = "none",
+    row = NA,
+    value = NA
+  )
+  row.names(modifications_pheno) <- traits
   
   # --- modifications -> geno
   modifications_geno <- data.frame(reason = c(NA),
@@ -174,37 +185,37 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
     analysisIdName = c("qa_ebs_pdm","qa_ebs_mda")
   )
   
-  # # --- modeling
-  # modeling <- data.frame(
-  #   module = "qaRaw",
-  #   analysisId = analysisId,
-  #   trait = traits,
-  #   environment = NA,
-  #   parameter = "outlierCoefOutqPheno",
-  #   value = NA
-  # )
-  # row.names(modeling) <- traits
+  # --- modeling
+  modeling <- data.frame(
+    module = "qaRaw",
+    analysisId = analysisId,
+    trait = traits,
+    environment = NA,
+    parameter = "outlierCoefOutqPheno",
+    value = NA
+  )
+  row.names(modeling) <- traits
   
-  # # --- Create final R object
+  # --- Create final R object
   result <- list(
     data = list(
-      # pheno = data_pheno,  # data.frame
-      # pedigree = data_pedigree, # data.frame
+      pheno = data_pheno,  # data.frame
+      pedigree = data_pedigree, # data.frame
       geno = data_geno,  # genlight object
       geno_imp = data_geno_imp  # genlight object
     ),
     metadata = list(
-      # pheno = metadata_pheno,  # data.frame
-      # pedigree = metadata_pedigree,  # data.frame
+      pheno = metadata_pheno,  # data.frame
+      pedigree = metadata_pedigree,  # data.frame
       geno = metadata_geno  # data.frame
     ),
     modifications = list(
-      # pheno = modifications_pheno  # data.frame
+      pheno = modifications_pheno, # data.frame
       geno = modifications_geno,  # data.frame
       geno_imp = modifications_geno_imp  # data.frame
     ),
-    status = status  # data.frame
-    # modeling = modeling  # data.frame
+    status = status,  # data.frame
+    modeling = modeling  # data.frame
   )
   cat("[RESULT] ")
   cat(str(result))
