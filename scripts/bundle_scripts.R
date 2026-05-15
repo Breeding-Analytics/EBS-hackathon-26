@@ -2,33 +2,12 @@ bundle_bioflow_scripts <- function(
   input_files = c(
     "packages_verification.R",
     "read_geno_functions.R",
-    "pheno_column_mapping_hardcoded.R",
-    "pheno_column_mapping_utils.R",
     "getBioflowRdata.R"
   ),
   scripts_dir = "scripts",
-  output_file = "bundled_getBioflowRdata.R",
-  mapping_json_file = "resources/mapping.json",
-  mapping_output_file = "pheno_column_mapping_hardcoded.R"
+  output_file = "bundled_getBioflowRdata.R"
 ) {
   scripts_dir <- normalizePath(scripts_dir, mustWork = TRUE)
-
-  if (!is.null(mapping_json_file) && nzchar(mapping_json_file)) {
-    utils_script_path <- file.path(scripts_dir, "pheno_column_mapping_utils.R")
-    if (!file.exists(utils_script_path)) {
-      stop(
-        sprintf("Missing mapping utility script: %s", utils_script_path),
-        call. = FALSE
-      )
-    }
-
-    source(utils_script_path, local = FALSE)
-    write_mapping_fn <- get("write_hardcoded_column_mapping", mode = "function")
-    write_mapping_fn(
-      mapping_json_file = mapping_json_file,
-      output_r_file = file.path(scripts_dir, mapping_output_file)
-    )
-  }
 
   input_paths <- file.path(scripts_dir, input_files)
   missing_files <- input_paths[!file.exists(input_paths)]
@@ -75,6 +54,5 @@ if (identical(environment(), globalenv()) && !interactive()) {
   bundle_bioflow_scripts(
     scripts_dir = scripts_dir,
     output_file = output_file,
-    mapping_json_file = mapping_json_file
   )
 }

@@ -64,17 +64,6 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
   # --- data -> pheno
   data_pheno <- read.csv(phenotypeFile, encoding = 'utf-8')
 
-  if (exists("apply_column_mapping_to_pheno", mode = "function") && exists("PHENO_COLUMN_MAPPING", inherits = TRUE)) {
-    apply_mapping_fn <- get("apply_column_mapping_to_pheno", mode = "function")
-    pheno_column_mapping <- get("PHENO_COLUMN_MAPPING", inherits = TRUE)
-
-    data_pheno <- apply_mapping_fn(
-      data_pheno = data_pheno,
-      column_mapping = pheno_column_mapping,
-      strict = FALSE
-    )
-  }
-  
   # # remove non-alphanumeric character in occurrenceName and revise how enviroment is created
   data_pheno$environment <- paste0("Env", paste(data_pheno$year, data_pheno$season, gsub("[^a-zA-Z0-9]", "", data_pheno$occurrenceName), sep = "_"))
   

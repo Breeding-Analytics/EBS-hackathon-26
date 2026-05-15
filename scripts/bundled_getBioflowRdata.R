@@ -1,6 +1,6 @@
 # Auto-generated file. Do not edit directly.
 # Source scripts are maintained in modular files under scripts/.
-# Generated on: 2026-05-15 08:04:08
+# Generated on: 2026-05-15 08:23:04
 
 # ---- BEGIN: packages_verification.R ----
 ensure_cran_packages <- function(packages, repos = "https://cloud.r-project.org") {
@@ -867,117 +867,6 @@ impute_gl <- function(gl, ploidity = 2, method = 'frequency', nflank = 100, ntre
 }
 # ---- END: read_geno_functions.R ----
 
-# ---- BEGIN: pheno_column_mapping_hardcoded.R ----
-# Auto-generated file. Do not edit directly.
-# Generated from JSON mapping: D:/OneDrive - CGIAR/Documents/Projects/2026/EBS_Hackathon/EBS-hackathon-26/resources/mapping.json
-
-PHENO_COLUMN_MAPPING <- c(
-  "paX" = "row",
-  "paY" = "col"
-)
-
-# ---- END: pheno_column_mapping_hardcoded.R ----
-
-# ---- BEGIN: pheno_column_mapping_utils.R ----
-load_json_column_mapping <- function(mapping_json_file) {
-  if (!file.exists(mapping_json_file)) {
-    stop(sprintf("Mapping JSON file not found: %s", mapping_json_file), call. = FALSE)
-  }
-
-  if (!requireNamespace("jsonlite", quietly = TRUE)) {
-    stop("Package 'jsonlite' is required to read mapping JSON files.", call. = FALSE)
-  }
-
-  mapping_list <- jsonlite::fromJSON(mapping_json_file, simplifyVector = TRUE)
-
-  if (!is.list(mapping_list) && !is.vector(mapping_list)) {
-    stop("Invalid JSON mapping: expected an object with key/value pairs.", call. = FALSE)
-  }
-
-  mapping_vector <- unlist(mapping_list, use.names = TRUE)
-
-  if (is.null(names(mapping_vector)) || any(names(mapping_vector) == "")) {
-    stop("Invalid JSON mapping: all keys must be non-empty column names.", call. = FALSE)
-  }
-
-  if (!is.character(mapping_vector)) {
-    mapping_vector <- as.character(mapping_vector)
-  }
-
-  if (anyNA(mapping_vector) || any(mapping_vector == "")) {
-    stop("Invalid JSON mapping: all values must be non-empty target column names.", call. = FALSE)
-  }
-
-  mapping_vector
-}
-
-write_hardcoded_column_mapping <- function(
-  mapping_json_file,
-  output_r_file = file.path("scripts", "pheno_column_mapping_hardcoded.R"),
-  object_name = "PHENO_COLUMN_MAPPING"
-) {
-  mapping_vector <- load_json_column_mapping(mapping_json_file)
-
-  escaped_old <- gsub('"', '\\\\"', names(mapping_vector), fixed = TRUE)
-  escaped_new <- gsub('"', '\\\\"', mapping_vector, fixed = TRUE)
-
-  mapping_lines <- sprintf('  "%s" = "%s"', escaped_old, escaped_new)
-
-  script_lines <- c(
-    "# Auto-generated file. Do not edit directly.",
-    sprintf("# Generated from JSON mapping: %s", normalizePath(mapping_json_file, winslash = "/", mustWork = TRUE)),
-    "",
-    sprintf("%s <- c(", object_name),
-    paste(mapping_lines, collapse = ",\n"),
-    ")",
-    ""
-  )
-
-  writeLines(script_lines, output_r_file, useBytes = TRUE)
-  message(sprintf("Hardcoded mapping script generated: %s", output_r_file))
-  invisible(output_r_file)
-}
-
-apply_column_mapping_to_pheno <- function(data_pheno, column_mapping, strict = FALSE) {
-  if (!is.data.frame(data_pheno)) {
-    stop("data_pheno must be a data.frame.", call. = FALSE)
-  }
-
-  if (length(column_mapping) == 0) {
-    return(data_pheno)
-  }
-
-  mapping_vector <- unlist(column_mapping, use.names = TRUE)
-
-  if (is.null(names(mapping_vector)) || any(names(mapping_vector) == "")) {
-    stop("column_mapping must be a named vector or named list.", call. = FALSE)
-  }
-
-  source_columns <- names(mapping_vector)
-  target_columns <- as.character(mapping_vector)
-
-  missing_in_input <- setdiff(source_columns, names(data_pheno))
-  if (strict && length(missing_in_input) > 0) {
-    stop(
-      sprintf(
-        "Mapped source column(s) missing in data_pheno: %s",
-        paste(missing_in_input, collapse = ", ")
-      ),
-      call. = FALSE
-    )
-  }
-
-  rename_index <- match(names(data_pheno), source_columns)
-  to_rename <- !is.na(rename_index)
-
-  if (any(to_rename)) {
-    names(data_pheno)[to_rename] <- target_columns[rename_index[to_rename]]
-  }
-
-  data_pheno
-}
-# ---- END: pheno_column_mapping_utils.R ----
-
 # ---- BEGIN: getBioflowRdata.R ----
 # Copyright (C) 2026 Enterprise Breeding System
 #
@@ -1045,17 +934,6 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
   # --- data -> pheno
   data_pheno <- read.csv(phenotypeFile, encoding = 'utf-8')
 
-  if (exists("apply_column_mapping_to_pheno", mode = "function") && exists("PHENO_COLUMN_MAPPING", inherits = TRUE)) {
-    apply_mapping_fn <- get("apply_column_mapping_to_pheno", mode = "function")
-    pheno_column_mapping <- get("PHENO_COLUMN_MAPPING", inherits = TRUE)
-
-    data_pheno <- apply_mapping_fn(
-      data_pheno = data_pheno,
-      column_mapping = pheno_column_mapping,
-      strict = FALSE
-    )
-  }
-  
   # # remove non-alphanumeric character in occurrenceName and revise how enviroment is created
   data_pheno$environment <- paste0("Env", paste(data_pheno$year, data_pheno$season, gsub("[^a-zA-Z0-9]", "", data_pheno$occurrenceName), sep = "_"))
   
