@@ -30,3 +30,8 @@ ensure_cran_packages <- function(packages, repos = "https://cloud.r-project.org"
     )
   }
 }
+
+ensure_github_packages <- function(){
+  if (!require(cgiarPipeline)) remotes::install_github("Breeding-Analytics/cgiarPipeline")
+  if (!require(cgiarBase)) remotes::install_github("Breeding-Analytics/cgiarBase")
+}
