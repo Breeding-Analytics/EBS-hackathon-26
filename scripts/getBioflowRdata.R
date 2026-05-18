@@ -250,13 +250,6 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
                                   verbose = "FALSE",
                                   maxit = 35)
 
-  # result$modeling <- rbind(result$modeling, read.csv("./test/sta_modeling.csv"))
-  # result$metrics <- rbind(result$metrics, read.csv("./test/sta_matrics.csv"))
-  # result$predictions <- rbind(result$predictions, read.csv("./test/sta_predictions.csv"))
-
-  # sta_analysisId <- result$modeling[result$modeling$module == "sta",]$analysisId[1]
-  # result$status <- rbind(result$status, data.frame(module = "sta", analysisId = sta_analysisId, analysisIdName = "ebs_sta_ph"))
-
   outputFile <- openssl::md5(as.character(analysisIdPheno))
   save(result, file = paste0(outputPath, "/", outputFile, ".RData"))
 
