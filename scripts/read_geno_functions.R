@@ -825,3 +825,40 @@ impute_gl <- function(gl, ploidity = 2, method = 'frequency', nflank = 100, ntre
   
   return(list(gl = imp_gl, log = imp_dict))
 }
+
+get_filter_log <- function(ogl,filter_step_log){
+  print("filter_processing...")
+  base_loc_names <- adegenet::locNames(ogl)
+  base_ind_names <- adegenet::indNames(ogl)
+  out <- purrr::map_df(filter_step_log, function(filter_step){
+    
+    if(length(filter_step$filter_out) > 0){
+      
+      reason <- paste(filter_step$filter_margin,
+                      filter_step$param,
+                      filter_step$operator,
+                      filter_step$threshold,
+                      sep = '_')
+      
+      if(filter_step$filter_margin == 'loc'){
+        loc_idx <- which(filter_step$filter_out %in% base_loc_names)
+        col_data <- loc_idx
+        row_data <- rep(NA, length(loc_idx))
+        
+      } else {
+        ind_idx <- which(filter_step$filter_out %in% base_ind_names)
+        col_data <- rep(NA, length(ind_idx))
+        row_data <- ind_idx
+      }
+      
+      filt_step_log <- data.frame(
+        reason = rep(reason, length(filter_step$filter_out)),
+        row = row_data,
+        col = col_data,
+        value = rep(NA, length(filter_step$filter_out))
+      )
+      return(filt_step_log)
+    }
+  })
+  return(out)
+}
