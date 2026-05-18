@@ -1,0 +1,8 @@
+"module","analysisId","trait","environment","parameter","value"
+"sta",1779125000.47927,"Maize_Plant_Height","envunknown_2024_NA_Nairobi_dataQCexperiment4_dataQCexperiment4001","fixedFormula","trait ~ designation + 1"
+"sta",1779125000.47927,"Maize_Plant_Height","envunknown_2024_NA_Nairobi_dataQCexperiment4_dataQCexperiment4001","randomFormula","repF"
+"sta",1779125000.47927,"Maize_Plant_Height","envunknown_2024_NA_Nairobi_dataQCexperiment4_dataQCexperiment4001","randomTermsRemoved",""
+"sta",1779125000.47927,"Maize_Plant_Height","envunknown_2024_NA_Nairobi_dataQCexperiment4_dataQCexperiment4001","spatialFormula",NA
+"sta",1779125000.47927,"Maize_Plant_Height","envunknown_2024_NA_Nairobi_dataQCexperiment4_dataQCexperiment4001","family","gaussian(link = 'identity')"
+"sta",1779125000.47927,"Maize_Plant_Height","envunknown_2024_NA_Nairobi_dataQCexperiment4_dataQCexperiment4001","designationEffectType","BLUE"
+"sta",1779125000.47927,"inputObject","general","analysisId","1779123624"
