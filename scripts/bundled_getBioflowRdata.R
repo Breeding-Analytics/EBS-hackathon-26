@@ -1,6 +1,6 @@
 # Auto-generated file. Do not edit directly.
 # Source scripts are maintained in modular files under scripts/.
-# Generated on: 2026-05-18 15:04:59
+# Generated on: 2026-05-18 15:23:20
 
 # ---- BEGIN: packages_verification.R ----
 ensure_cran_packages <- function(packages, repos = "https://cloud.r-project.org") {
@@ -34,6 +34,11 @@ ensure_cran_packages <- function(packages, repos = "https://cloud.r-project.org"
       call. = FALSE
     )
   }
+}
+
+ensure_github_packages <- function(){
+  if (!require(cgiarPipeline)) remotes::install_github("Breeding-Analytics/cgiarPipeline")
+  if (!require(cgiarBase)) remotes::install_github("Breeding-Analytics/cgiarBase")
 }
 # ---- END: packages_verification.R ----
 
@@ -960,7 +965,9 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
                      traits, outputPath, outputFile, requestId = NULL) {
 
   # Now we can use ensure_cran_packages since packages_verification.R has been sourced
-  ensure_cran_packages(c("vcfR", "adegenet", "cli", "rlang"))
+  ensure_cran_packages(c("vcfR", "adegenet", "cli", "rlang", "remotes"))
+  # Install if not cgiarPipelines and cgiarBase using remotes
+  ensure_github_packages()
   analysisIdPheno <- round(as.numeric(Sys.time()), 0)
   cat(paste0("Phenotypic QA/QC analysisId: ", analysisIdPheno, "\n"))
 
@@ -1140,22 +1147,20 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
     status = status,  # data.frame
     modeling = modeling  # data.frame
   )
-  cat("[RESULT] ")
-  cat(str(result))
   # check if folder exist or not
   if (!dir.exists(outputPath)) {
     dir.create(outputPath)
   }
-  load("test/sta_function_call.RData")
+  
   result <- cgiarPipeline::staLMM(phenoDTfile = result, analysisId=analysisIdPheno,
-                                  trait=koko$trait,
+                                  trait=traits,
                                   traitFamily = NULL,
-                                  fixedTerm = koko$fixedTerm,
-                                  returnFixedGeno=koko$returnFixedGeno,
-                                  genoUnit = koko$genoUnit,
-                                  rowColRole = koko$rowColRole,
-                                  verbose = koko$verbose,
-                                  maxit = koko$maxit)
+                                  fixedTerm = NULL,
+                                  returnFixedGeno = "TRUE",
+                                  genoUnit = "designation",
+                                  rowColRole = "spatial",
+                                  verbose = "FALSE",
+                                  maxit = 35)
 
   # result$modeling <- rbind(result$modeling, read.csv("./test/sta_modeling.csv"))
   # result$metrics <- rbind(result$metrics, read.csv("./test/sta_matrics.csv"))

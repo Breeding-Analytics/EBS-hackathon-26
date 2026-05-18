@@ -1,9 +1,0 @@
-"module","analysisId","trait","environment","parameter","method","value","stdError"
-"sta",1779125000.47927,"Maize_Plant_Height","envunknown_2024_NA_Nairobi_dataQCexperiment4_dataQCexperiment4001","plotH2_designation","vg/(vg+ve)-designation",0.00382114568206841,NA
-"sta",1779125000.47927,"Maize_Plant_Height","envunknown_2024_NA_Nairobi_dataQCexperiment4_dataQCexperiment4001","CV_designation","sd/mu-designation",27.9274600574769,NA
-"sta",1779125000.47927,"Maize_Plant_Height","envunknown_2024_NA_Nairobi_dataQCexperiment4_dataQCexperiment4001","r2_designation","(G-PEV)/G-designation",0.00685188019530077,0
-"sta",1779125000.47927,"Maize_Plant_Height","envunknown_2024_NA_Nairobi_dataQCexperiment4_dataQCexperiment4001","V_designation_designation","REML-designation",22.668499041503,NA
-"sta",1779125000.47927,"Maize_Plant_Height","envunknown_2024_NA_Nairobi_dataQCexperiment4_dataQCexperiment4001","V_repF_designation","REML-designation",872.754599457488,NA
-"sta",1779125000.47927,"Maize_Plant_Height","envunknown_2024_NA_Nairobi_dataQCexperiment4_dataQCexperiment4001","V_residual_designation","REML-designation",5909.71433259981,NA
-"sta",1779125000.47927,"Maize_Plant_Height","envunknown_2024_NA_Nairobi_dataQCexperiment4_dataQCexperiment4001","mean_designation","sum/n-designation",187.45,NA
-"sta",1779125000.47927,"Maize_Plant_Height","envunknown_2024_NA_Nairobi_dataQCexperiment4_dataQCexperiment4001","CV_environment","sqrt(MSE)/GM",41.0107582769641,NA
