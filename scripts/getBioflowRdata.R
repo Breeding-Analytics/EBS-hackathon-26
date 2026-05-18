@@ -239,23 +239,23 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
   if (!dir.exists(outputPath)) {
     dir.create(outputPath)
   }
+  load("test/sta_function_call.RData")
+  result <- cgiarPipeline::staLMM(phenoDTfile = result, analysisId=analysisIdPheno,
+                                  trait=koko$trait,
+                                  traitFamily = NULL,
+                                  fixedTerm = koko$fixedTerm,
+                                  returnFixedGeno=koko$returnFixedGeno,
+                                  genoUnit = koko$genoUnit,
+                                  rowColRole = koko$rowColRole,
+                                  verbose = koko$verbose,
+                                  maxit = koko$maxit)
 
-  # result <- cgiarPipeline::staLMM(phenoDTfile = result, analysisId=input$version2Sta,
-  #                                 trait=input$trait2Sta,
-  #                                 traitFamily = myFamily,
-  #                                 fixedTerm = input$fixedTermSta2,
-  #                                 returnFixedGeno=input$genoAsFixedSta,
-  #                                 genoUnit = input$genoUnitSta,
-  #                                 rowColRole = input$rowColRoleSta,
-  #                                 verbose = input$verboseSta,
-  #                                 maxit = input$maxitSta)
+  # result$modeling <- rbind(result$modeling, read.csv("./test/sta_modeling.csv"))
+  # result$metrics <- rbind(result$metrics, read.csv("./test/sta_matrics.csv"))
+  # result$predictions <- rbind(result$predictions, read.csv("./test/sta_predictions.csv"))
 
-  result$modeling <- rbind(result$modeling, read.csv("./test/sta_modeling.csv"))
-  result$metrics <- rbind(result$metrics, read.csv("./test/sta_matrics.csv"))
-  result$predictions <- rbind(result$predictions, read.csv("./test/sta_predictions.csv"))
-
-  sta_analysisId <- result$modeling[result$modeling$module == "sta",]$analysisId[1]
-  result$status <- rbind(result$status, data.frame(module = "sta", analysisId = sta_analysisId, analysisIdName = "ebs_sta_ph"))
+  # sta_analysisId <- result$modeling[result$modeling$module == "sta",]$analysisId[1]
+  # result$status <- rbind(result$status, data.frame(module = "sta", analysisId = sta_analysisId, analysisIdName = "ebs_sta_ph"))
 
   outputFile <- openssl::md5(as.character(analysisIdPheno))
   save(result, file = paste0(outputPath, "/", outputFile, ".RData"))

@@ -1,6 +1,6 @@
 # Auto-generated file. Do not edit directly.
 # Source scripts are maintained in modular files under scripts/.
-# Generated on: 2026-05-18 12:49:05
+# Generated on: 2026-05-18 15:04:59
 
 # ---- BEGIN: packages_verification.R ----
 ensure_cran_packages <- function(packages, repos = "https://cloud.r-project.org") {
@@ -1146,13 +1146,23 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
   if (!dir.exists(outputPath)) {
     dir.create(outputPath)
   }
+  load("test/sta_function_call.RData")
+  result <- cgiarPipeline::staLMM(phenoDTfile = result, analysisId=analysisIdPheno,
+                                  trait=koko$trait,
+                                  traitFamily = NULL,
+                                  fixedTerm = koko$fixedTerm,
+                                  returnFixedGeno=koko$returnFixedGeno,
+                                  genoUnit = koko$genoUnit,
+                                  rowColRole = koko$rowColRole,
+                                  verbose = koko$verbose,
+                                  maxit = koko$maxit)
 
-  result$modeling <- rbind(result$modeling, read.csv("./test/sta_modeling.csv"))
-  result$metrics <- rbind(result$metrics, read.csv("./test/sta_matrics.csv"))
-  result$predictions <- rbind(result$predictions, read.csv("./test/sta_predictions.csv"))
+  # result$modeling <- rbind(result$modeling, read.csv("./test/sta_modeling.csv"))
+  # result$metrics <- rbind(result$metrics, read.csv("./test/sta_matrics.csv"))
+  # result$predictions <- rbind(result$predictions, read.csv("./test/sta_predictions.csv"))
 
-  sta_analysisId <- result$modeling[result$modeling$module == "sta",]$analysisId[1]
-  result$status <- rbind(result$status, data.frame(module = "sta", analysisId = sta_analysisId, analysisIdName = "ebs_sta_ph"))
+  # sta_analysisId <- result$modeling[result$modeling$module == "sta",]$analysisId[1]
+  # result$status <- rbind(result$status, data.frame(module = "sta", analysisId = sta_analysisId, analysisIdName = "ebs_sta_ph"))
 
   outputFile <- openssl::md5(as.character(analysisIdPheno))
   save(result, file = paste0(outputPath, "/", outputFile, ".RData"))
