@@ -240,6 +240,16 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
     dir.create(outputPath)
   }
 
+  # result <- cgiarPipeline::staLMM(phenoDTfile = result, analysisId=input$version2Sta,
+  #                                 trait=input$trait2Sta,
+  #                                 traitFamily = myFamily,
+  #                                 fixedTerm = input$fixedTermSta2,
+  #                                 returnFixedGeno=input$genoAsFixedSta,
+  #                                 genoUnit = input$genoUnitSta,
+  #                                 rowColRole = input$rowColRoleSta,
+  #                                 verbose = input$verboseSta,
+  #                                 maxit = input$maxitSta)
+
   result$modeling <- rbind(result$modeling, read.csv("./test/sta_modeling.csv"))
   result$metrics <- rbind(result$metrics, read.csv("./test/sta_matrics.csv"))
   result$predictions <- rbind(result$predictions, read.csv("./test/sta_predictions.csv"))
