@@ -85,12 +85,8 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
   data_pheno[data_pheno$design == "Augmented RCBD", "rep"] <- NA # assumes that blockNumber is not NA
 
   # --- data -> pedigree
-  data_pedigree <- data.frame(
-    germplasmName = as.vector(unique(data_pheno$germplasmName)),
-    mother = NA,
-    father = NA,
-    yearOfOrigin = NA
-  )
+  data_pedigree <- read.csv(pedigreeFile, quote = "", encoding = 'utf-8', check.names = F)
+
 
   # --- data -> geno
   analysisIdGeno <- round(as.numeric(Sys.time()), 0)+1
@@ -148,8 +144,8 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
 
   # --- metadata -> pedigree
   metadata_pedigree <- data.frame(
-    parameter = as.vector(c("designation", "mother", "father", "yearOfOrigin")),
-    value = as.vector(c("germplasmName", "mother", "father", "yearOfOrigin"))
+    parameter = as.vector(c("designation", "mother", "father", "yearOfOrigin", "sample_id", "crossType")),
+    value = as.vector(c("germplasmName", "mother", "father", "year", "sample_id", "entry"))
   )
 
   # --- metadata -> geno
@@ -239,7 +235,7 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
   if (!dir.exists(outputPath)) {
     dir.create(outputPath)
   }
-  
+
   result <- cgiarPipeline::staLMM(phenoDTfile = result, analysisId=analysisIdPheno,
                                   trait=traits,
                                   traitFamily = NULL,

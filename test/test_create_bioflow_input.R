@@ -21,7 +21,7 @@ if (!file.exists(genotype_vcf_file)) {
 }
 cat("✓ All test data files found\n")
 
-# Source and run the function to collect all the codebase into a 
+# Source and run the function to collect all the codebase into a
 # single script
 source("scripts/bundle_scripts.R")
 bundle_bioflow_scripts()
@@ -38,7 +38,7 @@ traits <- c("Maize_Plant_Height")
 
 result <- getBioflowRData(
   phenotypeFile = phenotype_file,
-  pedigreeFile  = NULL,
+  pedigreeFile  = pedigree_file,
   genotypeFile = genotype_vcf_file,
   traits = traits,
   outputPath = output_path,
