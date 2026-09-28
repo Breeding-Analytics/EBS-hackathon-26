@@ -1,6 +1,6 @@
 # Auto-generated file. Do not edit directly.
 # Source scripts are maintained in modular files under scripts/.
-# Generated on: 2026-05-18 15:23:20
+# Generated on: 2026-09-28 03:53:04
 
 # ---- BEGIN: packages_verification.R ----
 ensure_cran_packages <- function(packages, repos = "https://cloud.r-project.org") {
@@ -997,12 +997,8 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
   data_pheno[data_pheno$design == "Augmented RCBD", "rep"] <- NA # assumes that blockNumber is not NA
 
   # --- data -> pedigree
-  data_pedigree <- data.frame(
-    germplasmName = as.vector(unique(data_pheno$germplasmName)),
-    mother = NA,
-    father = NA,
-    yearOfOrigin = NA
-  )
+  data_pedigree <- read.csv(pedigreeFile, quote = "", encoding = 'utf-8', check.names = F)
+
 
   # --- data -> geno
   analysisIdGeno <- round(as.numeric(Sys.time()), 0)+1
@@ -1060,8 +1056,8 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
 
   # --- metadata -> pedigree
   metadata_pedigree <- data.frame(
-    parameter = as.vector(c("designation", "mother", "father", "yearOfOrigin")),
-    value = as.vector(c("germplasmName", "mother", "father", "yearOfOrigin"))
+    parameter = as.vector(c("designation", "mother", "father", "yearOfOrigin", "sample_id", "crossType")),
+    value = as.vector(c("germplasmName", "mother", "father", "year", "sample_id", "entry"))
   )
 
   # --- metadata -> geno
@@ -1151,7 +1147,7 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
   if (!dir.exists(outputPath)) {
     dir.create(outputPath)
   }
-  
+
   result <- cgiarPipeline::staLMM(phenoDTfile = result, analysisId=analysisIdPheno,
                                   trait=traits,
                                   traitFamily = NULL,
@@ -1161,13 +1157,6 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
                                   rowColRole = "spatial",
                                   verbose = "FALSE",
                                   maxit = 35)
-
-  # result$modeling <- rbind(result$modeling, read.csv("./test/sta_modeling.csv"))
-  # result$metrics <- rbind(result$metrics, read.csv("./test/sta_matrics.csv"))
-  # result$predictions <- rbind(result$predictions, read.csv("./test/sta_predictions.csv"))
-
-  # sta_analysisId <- result$modeling[result$modeling$module == "sta",]$analysisId[1]
-  # result$status <- rbind(result$status, data.frame(module = "sta", analysisId = sta_analysisId, analysisIdName = "ebs_sta_ph"))
 
   outputFile <- openssl::md5(as.character(analysisIdPheno))
   save(result, file = paste0(outputPath, "/", outputFile, ".RData"))
