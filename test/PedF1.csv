@@ -1,4 +1,4 @@
-designation,sample_id,mother,father,entry,year
+germplasmName,sample_id,mother,father,entry,year
 geno1,sId_001,NA,NA,parent,NA
 geno1,sId_002,NA,NA,parent,NA
 geno1,sId_003,NA,NA,parent,NA
