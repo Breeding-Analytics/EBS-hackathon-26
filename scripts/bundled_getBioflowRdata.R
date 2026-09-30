@@ -1,6 +1,6 @@
 # Auto-generated file. Do not edit directly.
 # Source scripts are maintained in modular files under scripts/.
-# Generated on: 2026-09-29 20:20:34
+# Generated on: 2026-09-29 21:43:32
 
 # ---- BEGIN: packages_verification.R ----
 # CRAN packages the converter needs. vcfR/adegenet read and hold the markers;
@@ -2168,16 +2168,16 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
     # renders as "NA_<timestamp>" in the MTA stamp dropdown. Name it in place -
     # appending another row instead would create a duplicate "sta" entry and
     # break that dropdown (names(traitsMta) <- paste(...) length mismatch).
-    if (!is.null(result$status) && "sta" %in% result$status$module) {
+    if (!is.null(result$status) && any(c("sta", "soa") %in% result$status$module)) {
       if (!"analysisIdName" %in% colnames(result$status)) {
         result$status$analysisIdName <- NA_character_
       }
       result$status$analysisIdName <- as.character(result$status$analysisIdName)
-      staRows <- which(result$status$module == "sta")
+      staRows <- which(result$status$module %in% c("sta", "soa"))
       needsName <- staRows[is.na(result$status$analysisIdName[staRows]) |
                              !nzchar(result$status$analysisIdName[staRows])]
       if (length(needsName) > 0) {
-        result$status$analysisIdName[needsName] <- "ebs_sta_ph"
+        result$status$analysisIdName[needsName] <- "ebs_soa_ph"
       }
     }
 

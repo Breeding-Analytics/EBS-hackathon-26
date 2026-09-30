@@ -3,10 +3,10 @@
 # against the three interoperability use cases: MTA, F1 qa/qc, Pedigree qa/qc.
 
 # Define paths to test data files (relative to project root)
-phenotype_file    <- "test/bioflow_pheno_data.csv"
-pedigree_file     <- "test/PedF1.csv"
-genotype_vcf_file <- "test/bioflow_genotype_data_fix.vcf"
-output_file       <- "bioflow_input_test"
+phenotype_file    <- "test/pedigree_issue/bioflow_pheno_data_v2_3144755410729812944.csv"
+pedigree_file     <- "test/pedigree_issue/bioflow_pedigree_data_14353412722855480572.csv"
+genotype_vcf_file <- "test/pedigree_issue/bioflow_genotype_data_8237954188371344713.vcf"
+output_file       <- NULL
 output_path       <- "test"
 
 # Verify test data files exist
@@ -33,7 +33,7 @@ source("scripts/bundled_getBioflowRdata.R")
 
 # Run the function
 cat("\nExecuting getBioflowRData...\n")
-traits <- c("Maize_Plant_Height")
+traits <- c("RC_PH_M_CM","HVHILL_CONT","HV_AREA_SQM","PACP_SCOR_1_9","RC_PH_M_CM_PLANT_1","RC_PH_M_CM_PLANT_2","RC_PH_M_CM_PLANT_3")
 
 out <- getBioflowRData(
   phenotypeFile = phenotype_file,
