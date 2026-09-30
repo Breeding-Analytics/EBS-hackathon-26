@@ -1,6 +1,6 @@
 # Auto-generated file. Do not edit directly.
 # Source scripts are maintained in modular files under scripts/.
-# Generated on: 2026-09-28 03:53:04
+# Generated on: 2026-09-29 20:01:12
 
 # ---- BEGIN: packages_verification.R ----
 ensure_cran_packages <- function(packages, repos = "https://cloud.r-project.org") {
