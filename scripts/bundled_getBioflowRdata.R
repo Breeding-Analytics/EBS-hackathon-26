@@ -1,6 +1,6 @@
 # Auto-generated file. Do not edit directly.
 # Source scripts are maintained in modular files under scripts/.
-# Generated on: 2026-09-24 23:49:39
+# Generated on: 2026-09-29 20:01:12
 
 # ---- BEGIN: packages_verification.R ----
 # CRAN packages the converter needs. vcfR/adegenet read and hold the markers;
