@@ -38,7 +38,7 @@ actionable.
   the ploidy level; filters and imputes markers, logging both
 - Runs Single Trial Analysis and writes the `result` object as `.RData`
 
-### Usage
+### Usage to run Single Occurence Analysis
 
 ```r
 # NOTE: source(), not library() - this is a script, not a package
@@ -54,13 +54,33 @@ out <- getBioflowRData(
   genotypeFile  = "test/inputF1.vcf",
   traits        = traits,
   outputPath    = "test",                 # directory
-  outputFile    = "bioflow_input_test"    # file name, without the .RData suffix
+  outputFile    = "bioflow_input_test",    # file name, without the .RData suffix if empty md5 generated
+  runSOA        = TRUE
 )
 
 out$file     # path of the file that was written
 out$result   # the object itself
 ```
 
+### Usage to run F1 QA/QC or pedigree verification
+
+```r
+# NOTE: source(), not library() - this is a script, not a package
+source("https://raw.githubusercontent.com/Breeding-Analytics/EBS-hackathon-26/refs/heads/main/scripts/bundled_getBioflowRdata.R")
+
+out <- getBioflowRData(
+  phenotypeFile = NULL,
+  pedigreeFile  = "test/PedF1.csv",
+  genotypeFile  = "test/inputF1.vcf",
+  traits        = NULL,
+  outputPath    = "test",                 # directory
+  outputFile    = "bioflow_input_test",    # file name, without the .RData suffix if empty md5 generated
+  runSOA        = FALSE
+)
+
+out$file     # path of the file that was written
+out$result   # the object itself
+```
 `outputPath` is the directory and `outputFile` is the file name. When
 `outputFile` is `NULL` the file is named with the md5 hash of the phenotype
 `analysisId`, which is the EBS content-addressed convention.

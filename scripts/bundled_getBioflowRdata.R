@@ -1,6 +1,6 @@
 # Auto-generated file. Do not edit directly.
 # Source scripts are maintained in modular files under scripts/.
-# Generated on: 2026-09-29 21:43:32
+# Generated on: 2026-10-09 08:28:48
 
 # ---- BEGIN: packages_verification.R ----
 # CRAN packages the converter needs. vcfR/adegenet read and hold the markers;
@@ -1895,17 +1895,17 @@ validate_bioflow_object <- function(object, verbose = TRUE) {
 #' @param requestId string indicating the analysis request id generated in EBS
 #' @param pedigreeMapping optional named list mapping Bioflow pedigree parameters to columns of `pedigreeFile`, e.g. `list(crossType = "entry", yearOfOrigin = "year")`. Only needed when auto-detection cannot resolve a column.
 #' @param deriveCrossType logical; when `pedigreeFile` has no crossType column, infer one from parent completeness so the F1 qa/qc module can run. Default TRUE.
-#' @param runSTA logical; run `cgiarPipeline::staLMM()` so the object arrives MTA-ready. Default TRUE. Set FALSE to export a pedigree/genotype-only object for the qa/qc use cases.
+#' @param runSOA logical; run `cgiarPipeline::staLMM()` so the object arrives MTA-ready. Default TRUE. Set FALSE to export a pedigree/genotype-only object for the qa/qc use cases.
 #' @param validate logical; print the use-case readiness report. Default TRUE.
 #'
 #' @return Invisibly, a list with `result` (the object written) and `file` (the
 #'   path it was written to).
 # -------------------------------------------------------------------------------------
 
-getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = NULL,
-                     traits, outputPath, outputFile = NULL, requestId = NULL,
+getBioflowRData <- function(phenotypeFile = NULL, pedigreeFile = NULL, genotypeFile = NULL,
+                     traits = NULL, outputPath, outputFile = NULL, requestId = NULL,
                      pedigreeMapping = NULL, deriveCrossType = TRUE,
-                     runSTA = TRUE, validate = TRUE) {
+                     runSOA = FALSE, validate = TRUE) {
 
   # Now we can use ensure_cran_packages since packages_verification.R has been sourced
   ensure_cran_packages(c("vcfR", "adegenet", "cli", "rlang", "remotes",
@@ -1913,40 +1913,118 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
   # Install if not cgiarPipelines and cgiarBase using remotes
   ensure_github_packages()
 
-  analysisIdPheno <- round(as.numeric(Sys.time()), 0)
-  cat(paste0("Phenotypic QA/QC analysisId: ", analysisIdPheno, "\n"))
+  # If null dont bind
+  status <- NULL
+  analysisIdPheno <- NULL
+  analysisIdGeno <- NULL
 
-  # --- data -> pheno
-  data_pheno <- read.csv(phenotypeFile, encoding = 'utf-8', check.names = F)
+  havePheno <- !is.null(phenotypeFile) && nzchar(phenotypeFile)
+  haveGeno <- !is.null(genotypeFile) && nzchar(genotypeFile)
 
-  missingTraits <- setdiff(traits, colnames(data_pheno))
-  if (length(missingTraits) > 0) {
-    stop(paste0("These traits are not columns of the phenotype file: ",
-                paste(missingTraits, collapse = ", ")), call. = FALSE)
+  if(havePheno) {
+    analysisIdPheno <- round(as.numeric(Sys.time()), 0)
+    cat(paste0("Phenotypic QA/QC analysisId: ", analysisIdPheno, "\n"))
+
+    # --- data -> pheno
+    data_pheno <- read.csv(phenotypeFile, encoding = 'utf-8', check.names = F)
+
+    missingTraits <- setdiff(traits, colnames(data_pheno))
+    if (length(missingTraits) > 0) {
+      stop(paste0("These traits are not columns of the phenotype file: ",
+                  paste(missingTraits, collapse = ", ")), call. = FALSE)
+    }
+
+    # remove non-alphanumeric character in occurrenceName and revise how enviroment is created
+    data_pheno$environment <- paste0("env",
+                                     paste(data_pheno$breedingStage,
+                                           data_pheno$year,
+                                           data_pheno$season,
+                                           gsub("[^a-zA-Z0-9]", "", data_pheno$site),
+                                           gsub("[^a-zA-Z0-9]", "", data_pheno$experimentName),
+                                           gsub("[^a-zA-Z0-9]", "", data_pheno$occurrenceName), sep = "_"))
+
+    # Create dummy columns to mimic STA behiavor
+    data_pheno[,paste0(traits, "-residual")] <- NA
+
+    # check if variable are present
+    if (any(is.na(data_pheno$design)) || any(data_pheno$design == "")) {
+      stop("Design information are missing for some or all rows.")
+    }
+
+    # check design parameter base, rep in EBS pertains to the number of times that entry appear in the occurrence
+    data_pheno[data_pheno$design == "Partially Replicated", "rep"] <- NA
+    data_pheno[data_pheno$design == "Augmented", "rep"] <- NA
+    data_pheno[data_pheno$design == "Augmented RCBD", "rep"] <- NA # assumes that blockNumber is not NA
+
+    # --- metadata -> pheno
+    # NOTE: rep() is bugged with python
+    # metadata_pheno <- data.frame(
+    #   parameter = as.vector(c("stage", "year", "season", "location", "trial", "study", "rep", "iBlock", "row", "col", "designation", "gid", "entryType", rep("trait", nTrait), "environment", "source")),
+    #   value = as.vector(c("breedingStage", "year", "season", "site", "experiment", "occurrenceName", "rep", "blockNumber", "paY", "paX", "germplasmName", "germplasmDbId", "entryType", traits, "environment", "ebs-ba"))
+    # )
+
+    metadata_pheno1 <- data.frame(
+      parameter = c("stage", "year", "season", "location", "trial", "study", "rep", "iBlock", "row", "col", "designation", "gid", "entryType"),
+      value = c("breedingStage", "year", "season", "site", "experimentName", "occurrenceName", "rep", "blockNumber", "paY", "paX", "germplasmName", "germplasmDbId", "entryType")
+    )
+    metadata_pheno2 <- data.frame(
+      parameter = "trait",
+      value = traits
+    )
+    if (is.null(requestId)) {
+      metadata_pheno3 <- data.frame(
+        parameter = c("environment", "source", "sourceId"),
+        value = c("environment", "ebs-ba", NA)
+      )
+    } else {
+      metadata_pheno3 <- data.frame(
+        parameter = c("environment", "source", "sourceId"),
+        value = c("environment", "ebs-ba", requestId)
+      )
+    }
+
+    metadata_pheno <- rbind(rbind(metadata_pheno1, metadata_pheno2), metadata_pheno3)
+
+    metadata_pheno_parameter_size <- length(metadata_pheno$parameter)
+    metadata_pheno_value_size <- length(metadata_pheno$value)
+    if (metadata_pheno_parameter_size != metadata_pheno_value_size) {
+      stop(paste0("metadata length mismatch: ",
+                  "parameter=", metadata_pheno_parameter_size,
+                  " vs. value=", metadata_pheno_value_size))
+    }
+
+    # --- modifications -> pheno
+    modifications_pheno <- data.frame(
+      module = "qaRaw",
+      analysisId = analysisIdPheno,
+      trait = traits,
+      reason = "none",
+      row = NA,
+      value = NA
+    )
+    row.names(modifications_pheno) <- traits
+
+    # --- status
+    # One row per analysis actually performed. analysisIdName must be a real
+    # string: MTA and the qa/qc modules label their dropdowns with it.
+    status <- data.frame(
+      module = "qaRaw",
+      analysisId = analysisIdPheno,
+      analysisIdName = "qa_ebs_pdm",
+      stringsAsFactors = FALSE
+    )
+
+    # --- modeling
+    modeling <- data.frame(
+      module = "qaRaw",
+      analysisId = analysisIdPheno,
+      trait = traits,
+      environment = NA,
+      parameter = "outlierCoefOutqPheno",
+      value = NA
+    )
+    row.names(modeling) <- traits
   }
-
-  # remove non-alphanumeric character in occurrenceName and revise how enviroment is created
-  data_pheno$environment <- paste0("env",
-                                   paste(data_pheno$breedingStage,
-                                         data_pheno$year,
-                                         data_pheno$season,
-                                         gsub("[^a-zA-Z0-9]", "", data_pheno$site),
-                                         gsub("[^a-zA-Z0-9]", "", data_pheno$experimentName),
-                                         gsub("[^a-zA-Z0-9]", "", data_pheno$occurrenceName), sep = "_"))
-
-  # Create dummy columns to mimic STA behiavor
-  data_pheno[,paste0(traits, "-residual")] <- NA
-
-  # check if variable are present
-  if (any(is.na(data_pheno$design)) || any(data_pheno$design == "")) {
-    stop("Design information are missing for some or all rows.")
-  }
-
-  # check design parameter base, rep in EBS pertains to the number of times that entry appear in the occurrence
-  data_pheno[data_pheno$design == "Partially Replicated", "rep"] <- NA
-  data_pheno[data_pheno$design == "Augmented", "rep"] <- NA
-  data_pheno[data_pheno$design == "Augmented RCBD", "rep"] <- NA # assumes that blockNumber is not NA
-
   # --- data -> pedigree
   # Read the pedigree file when one is supplied. Every column of the file is
   # carried through; designation, mother and father are mandatory. Falling back
@@ -1956,8 +2034,9 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
       pedigreeFile    = pedigreeFile,
       mapping         = pedigreeMapping,
       deriveCrossType = deriveCrossType,
-      restrictTo      = data_pheno$germplasmName
+      restrictTo      = if (havePheno) data_pheno$germplasmName else NULL
     )
+
   } else {
     pedigreeBundle <- synthesize_pedigree_from_pheno(data_pheno$germplasmName)
   }
@@ -1967,7 +2046,6 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
   # --- data -> geno
   # Genotypes are optional: MTA works without them, but both qa/qc use cases
   # need them (and F1 qa/qc needs the parents genotyped, not just the progeny).
-  haveGeno <- !is.null(genotypeFile) && nzchar(genotypeFile)
 
   data_geno              <- NULL
   data_geno_imp          <- NULL
@@ -1980,6 +2058,8 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
   if (haveGeno) {
     analysisIdGeno <- round(as.numeric(Sys.time()), 0) + 1
     cat(paste0("Genotype QA/QC analysisId: ", analysisIdGeno, "\n"))
+
+
     data_geno <- read_vcf(genotypeFile)
     genoPloidy <- max(adegenet::ploidy(data_geno))
 
@@ -2040,6 +2120,22 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
         analysisIdGeno, "']] recorded as NULL."
       ))
     }
+
+    if (is.null(status)) {
+      status <- data.frame(
+        module = "qaGeno",
+        analysisId = analysisIdGeno,
+        analysisIdName = "qa_ebs_mda",
+        stringsAsFactors = FALSE)
+    } else {
+      status <- rbind(status, data.frame(
+        module = "qaGeno",
+        analysisId = analysisIdGeno,
+        analysisIdName = "qa_ebs_mda",
+        stringsAsFactors = FALSE
+    ))
+    }
+
   } else {
     cli::cli_warn(paste0(
       "No genotype file supplied. F1 qa/qc and Pedigree qa/qc both require ",
@@ -2047,103 +2143,27 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
     ))
   }
 
-  # --- metadata -> pheno
-  # NOTE: rep() is bugged with python
-  # metadata_pheno <- data.frame(
-  #   parameter = as.vector(c("stage", "year", "season", "location", "trial", "study", "rep", "iBlock", "row", "col", "designation", "gid", "entryType", rep("trait", nTrait), "environment", "source")),
-  #   value = as.vector(c("breedingStage", "year", "season", "site", "experiment", "occurrenceName", "rep", "blockNumber", "paY", "paX", "germplasmName", "germplasmDbId", "entryType", traits, "environment", "ebs-ba"))
-  # )
-
-  metadata_pheno1 <- data.frame(
-    parameter = c("stage", "year", "season", "location", "trial", "study", "rep", "iBlock", "row", "col", "designation", "gid", "entryType"),
-    value = c("breedingStage", "year", "season", "site", "experimentName", "occurrenceName", "rep", "blockNumber", "paY", "paX", "germplasmName", "germplasmDbId", "entryType")
-  )
-  metadata_pheno2 <- data.frame(
-    parameter = "trait",
-    value = traits
-  )
-  if (is.null(requestId)) {
-    metadata_pheno3 <- data.frame(
-      parameter = c("environment", "source", "sourceId"),
-      value = c("environment", "ebs-ba", NA)
-    )
-  } else {
-    metadata_pheno3 <- data.frame(
-      parameter = c("environment", "source", "sourceId"),
-      value = c("environment", "ebs-ba", requestId)
-    )
-  }
-
-  metadata_pheno <- rbind(rbind(metadata_pheno1, metadata_pheno2), metadata_pheno3)
-
-  metadata_pheno_parameter_size <- length(metadata_pheno$parameter)
-  metadata_pheno_value_size <- length(metadata_pheno$value)
-  if (metadata_pheno_parameter_size != metadata_pheno_value_size) {
-    stop(paste0("metadata length mismatch: ",
-                "parameter=", metadata_pheno_parameter_size,
-                " vs. value=", metadata_pheno_value_size))
-  }
-
-  # --- modifications -> pheno
-  modifications_pheno <- data.frame(
-    module = "qaRaw",
-    analysisId = analysisIdPheno,
-    trait = traits,
-    reason = "none",
-    row = NA,
-    value = NA
-  )
-  row.names(modifications_pheno) <- traits
-
-  # --- status
-  # One row per analysis actually performed. analysisIdName must be a real
-  # string: MTA and the qa/qc modules label their dropdowns with it.
-  status <- data.frame(
-    module = "qaRaw",
-    analysisId = analysisIdPheno,
-    analysisIdName = "qa_ebs_pdm",
-    stringsAsFactors = FALSE
-  )
-  if (haveGeno) {
-    status <- rbind(status, data.frame(
-      module = "qaGeno",
-      analysisId = analysisIdGeno,
-      analysisIdName = "qa_ebs_mda",
-      stringsAsFactors = FALSE
-    ))
-  }
-
-  # --- modeling
-  modeling <- data.frame(
-    module = "qaRaw",
-    analysisId = analysisIdPheno,
-    trait = traits,
-    environment = NA,
-    parameter = "outlierCoefOutqPheno",
-    value = NA
-  )
-  row.names(modeling) <- traits
 
   # --- Create final R object
   result <- list(
     data = list(
-      pheno = data_pheno,  # data.frame
+      pheno = if (havePheno) data_pheno else NULL,  # data.frame
       pedigree = data_pedigree, # data.frame
-      geno = data_geno,  # genlight object
-      geno_imp = data_geno_imp  # named list of genlight objects, keyed by analysisId
+      geno = if (haveGeno) data_geno else NULL,  # genlight object
+      geno_imp = if (haveGeno) data_geno_imp else NULL  # named list of genlight objects, keyed by analysisId
     ),
     metadata = list(
-      pheno = metadata_pheno,  # data.frame
+      pheno = if (havePheno) metadata_pheno else NULL,  # data.frame
       pedigree = metadata_pedigree,  # data.frame
-      geno = metadata_geno  # data.frame
+      geno = if (haveGeno) metadata_geno else NULL  # data.frame
     ),
     modifications = list(
-      pheno = modifications_pheno, # data.frame
-      geno = modifications_geno,  # data.frame
-      geno_imp = modifications_geno_imp  # named list, keyed by analysisId
+      pheno = if (havePheno) modifications_pheno else NULL, # data.frame
+      geno = if (haveGeno) modifications_geno else NULL,  # data.frame
+      geno_imp =  if (haveGeno) modifications_geno_imp else NULL # named list, keyed by analysisId
     ),
     status = status,  # data.frame
-    modeling = modeling  # data.frame
+    modeling = if (havePheno) modeling else NULL  # data.frame
   )
 
   # Drop the slots we could not populate so Bioflow's is.null() guards fire
@@ -2153,7 +2173,7 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
   result$modifications <- result$modifications[!vapply(result$modifications, is.null, logical(1))]
 
   # --- Single Trial Analysis, so the object arrives MTA-ready
-  if (isTRUE(runSTA)) {
+  if (isTRUE(runSOA)) {
     result <- cgiarPipeline::staLMM(phenoDTfile = result, analysisId=analysisIdPheno,
                                     trait=traits,
                                     traitFamily = NULL,
@@ -2197,7 +2217,11 @@ getBioflowRData <- function(phenotypeFile, pedigreeFile = NULL, genotypeFile = N
   # Honour the requested file name; fall back to the md5 convention when none
   # is given (previously the argument was accepted and then always overwritten).
   if (is.null(outputFile) || !nzchar(outputFile)) {
-    outputFile <- openssl::md5(as.character(analysisIdPheno))
+    if (!is.null(analysisIdPheno)){
+      outputFile <- openssl::md5(as.character(analysisIdPheno))
+    } else {
+      outputFile <- openssl::md5(as.character(analysisIdGeno))
+    }
   }
   outFilePath <- file.path(outputPath, paste0(outputFile, ".RData"))
   save(result, file = outFilePath)

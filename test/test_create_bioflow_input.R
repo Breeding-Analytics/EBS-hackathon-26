@@ -3,24 +3,33 @@
 # against the three interoperability use cases: MTA, F1 qa/qc, Pedigree qa/qc.
 
 # Define paths to test data files (relative to project root)
-phenotype_file    <- "test/pedigree_issue/bioflow_pheno_data_v2_3144755410729812944.csv"
-pedigree_file     <- "test/pedigree_issue/bioflow_pedigree_data_14353412722855480572.csv"
-genotype_vcf_file <- "test/pedigree_issue/bioflow_genotype_data_8237954188371344713.vcf"
+phenotype_file    <- NULL
+pedigree_file     <- "test/genotype_issue/bioflow_pedigree_data_6741592879727050564.csv"
+genotype_vcf_file <- "test/genotype_issue/bioflow_genotype_data_Designation-val.vcf"
 output_file       <- NULL
 output_path       <- "test"
 
 # Verify test data files exist
 cat("Checking for test data files...\n")
-if (!file.exists(phenotype_file)) {
-  stop(sprintf("Phenotype file not found: %s", phenotype_file), call. = FALSE)
+
+files <- list(
+  Phenotype = phenotype_file,
+  Pedigree = pedigree_file,
+  Genotype = genotype_vcf_file
+)
+
+for (name in names(files)) {
+  path <- files[[name]]
+
+  if (!is.null(path) && !file.exists(path)) {
+    stop(
+      sprintf("%s file not found: %s", name, path),
+      call. = FALSE
+    )
+  }
 }
-if (!file.exists(pedigree_file)) {
-  stop(sprintf("Pedigree file not found: %s", pedigree_file), call. = FALSE)
-}
-if (!file.exists(genotype_vcf_file)) {
-  stop(sprintf("Genotype VCF file not found: %s", genotype_vcf_file), call. = FALSE)
-}
-cat("All test data files found\n")
+
+cat("All provided test data files found\n")
 
 # Source and run the function to collect all the codebase into a
 # single script
@@ -39,9 +48,10 @@ out <- getBioflowRData(
   phenotypeFile = phenotype_file,
   pedigreeFile  = pedigree_file,
   genotypeFile  = genotype_vcf_file,
-  traits        = traits,
+  traits        = NULL,
   outputPath    = output_path,
   outputFile    = output_file,
+  runSOA = FALSE,
   # PedF1.csv calls the cross-type column "entry" and the origin year "year".
   # Auto-detection resolves both, but being explicit documents the intent.
   pedigreeMapping = list(crossType = "entry", yearOfOrigin = "year")
